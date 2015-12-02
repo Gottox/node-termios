@@ -1,0 +1,23 @@
+language: node_js
+sudo: false
+addons:
+    apt:
+        sources:
+            - ubuntu-toolchain-r-test
+        packages:
+            - gcc-4.8
+            - g++-4.8
+before_install:
+    - export CXX="g++-4.8" CC="gcc-4.8"
+node_js:
+  - "0.12"
+  - "0.11"
+  - "0.10"
+  - "4.0"
+  - "5.0"
+notifications:
+  irc:
+      channels:
+          - "chat.freenode.net#terminal.js"
+      skip_join: true
+      use_notice: true
