@@ -1,6 +1,7 @@
 #include <nan.h>
 #include <termios.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define EXPORT_SYMBOL(o, s) o->Set(Nan::New<v8::String>(#s).ToLocalChecked(), Nan::New<v8::Number>(s));
 
@@ -18,20 +19,20 @@ NAN_METHOD(Setattr) {
 		t.c_cflag = obj->Get(Nan::New<v8::String>("cflag").ToLocalChecked())->Uint32Value();
 	if(obj->Has(Nan::New<v8::String>("lflag").ToLocalChecked()))
 		t.c_lflag = obj->Get(Nan::New<v8::String>("lflag").ToLocalChecked())->Uint32Value();
-	if(tcsetattr(info[0]->Uint32Value(), info[1]->Uint32Value(), &t) < 0)
+	if(tcsetattr(info[0]->Uint32Value(), TCSADRAIN, &t) < 0)
 		return Nan::ThrowError(strerror(errno));
 }
 
 NAN_METHOD(Getattr) {
-	struct termios tios;
+	struct termios t;
 	Nan::HandleScope scope;
-	if(tcgetattr(info[0]->Uint32Value(), &tios) < 0)
+	if(tcgetattr(info[0]->Uint32Value(), &t) < 0)
 		return Nan::ThrowError(strerror(errno));
 	v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-	obj->Set(Nan::New<v8::String>("iflag").ToLocalChecked(), Nan::New<v8::Number>(tios.c_iflag));
-	obj->Set(Nan::New<v8::String>("oflag").ToLocalChecked(), Nan::New<v8::Number>(tios.c_oflag));
-	obj->Set(Nan::New<v8::String>("cflag").ToLocalChecked(), Nan::New<v8::Number>(tios.c_cflag));
-	obj->Set(Nan::New<v8::String>("lflag").ToLocalChecked(), Nan::New<v8::Number>(tios.c_lflag));
+	obj->Set(Nan::New<v8::String>("iflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_iflag));
+	obj->Set(Nan::New<v8::String>("oflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_oflag));
+	obj->Set(Nan::New<v8::String>("cflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_cflag));
+	obj->Set(Nan::New<v8::String>("lflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_lflag));
 	info.GetReturnValue().Set(obj);
 }
 
