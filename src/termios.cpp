@@ -10,15 +10,21 @@ NAN_METHOD(Setattr) {
 	Nan::HandleScope scope;
 	bzero(&t, sizeof(struct termios));
 	v8::Local<v8::Object> obj = info[2]->ToObject();
+	v8::Local<v8::String> iflag = Nan::New<v8::String>("iflag").ToLocalChecked();
+	v8::Local<v8::String> oflag = Nan::New<v8::String>("oflag").ToLocalChecked();
+	v8::Local<v8::String> cflag = Nan::New<v8::String>("cflag").ToLocalChecked();
+	v8::Local<v8::String> lflag = Nan::New<v8::String>("lflag").ToLocalChecked();
 
-	if(obj->Has(Nan::New<v8::String>("iflag").ToLocalChecked()))
-		t.c_iflag = obj->Get(Nan::New<v8::String>("iflag").ToLocalChecked())->Uint32Value();
-	if(obj->Has(Nan::New<v8::String>("oflag").ToLocalChecked()))
-		t.c_oflag = obj->Get(Nan::New<v8::String>("oflag").ToLocalChecked())->Uint32Value();
-	if(obj->Has(Nan::New<v8::String>("cflag").ToLocalChecked()))
-		t.c_cflag = obj->Get(Nan::New<v8::String>("cflag").ToLocalChecked())->Uint32Value();
-	if(obj->Has(Nan::New<v8::String>("lflag").ToLocalChecked()))
-		t.c_lflag = obj->Get(Nan::New<v8::String>("lflag").ToLocalChecked())->Uint32Value();
+	if(!info[0]->IsNumber())
+		return Nan::ThrowError("fd must be a number");
+	if(obj->Has(iflag))
+		t.c_iflag = obj->Get(iflag)->Uint32Value();
+	if(obj->Has(oflag))
+		t.c_oflag = obj->Get(oflag)->Uint32Value();
+	if(obj->Has(cflag))
+		t.c_cflag = obj->Get(cflag)->Uint32Value();
+	if(obj->Has(lflag))
+		t.c_lflag = obj->Get(lflag)->Uint32Value();
 	if(tcsetattr(info[0]->Uint32Value(), TCSADRAIN, &t) < 0)
 		return Nan::ThrowError(strerror(errno));
 }
