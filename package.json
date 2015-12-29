@@ -1,6 +1,6 @@
 {
   "name": "termios",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "get and set terminal attributes, line control, get and set baud rate",
   "main": "index.js",
   "scripts": {
