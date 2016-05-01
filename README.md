@@ -10,7 +10,7 @@ API
 
 
 * an `attr` object may contain on or more of the following boolean fields:
-  * `attr.iflag`: 
+  * `attr.iflag`:
     * `IGNBRK`: ignore BREAK condition
     * `BRKINT`: map BREAK to SIGINT
     * `IGNPAR`: ignore (discard) parity errors
@@ -24,13 +24,13 @@ API
     * `IXOFF`: enable input flow control
     * `IXANY`: any char will restart after stop
     * `IMAXBEL`: ring bell on input queue full
-  * `attr.oflag`: 
+  * `attr.oflag`:
     * `OPOST`: enable following output processing
     * `ONLCR`: map NL to CR-NL (ala CRMOD)
     * `OCRNL`: map CR to NL
     * `ONOCR`: No CR output at column 0
     * `ONLRET`: NL performs the CR function
-  * `attr.cflag`: 
+  * `attr.cflag`:
     * `CSIZE`: character size mask
     * `CS5`: 5 bits (pseudo)
     * `CS6`: 6 bits
@@ -42,7 +42,7 @@ API
     * `PARODD`: odd parity, else even
     * `HUPCL`: hang up on last close
     * `CLOCAL`: ignore modem status lines
-  * `attr.lflag`: 
+  * `attr.lflag`:
     * `ECHOKE`: visual erase for line kill
     * `ECHOE`: visually erase chars
     * `ECHOK`: echo NL after line kill
@@ -59,6 +59,26 @@ API
     * `PENDIN`: XXX retype pending input (state)
     * `NOFLSH`: don't flush after interrupt
     * `XCASE`: canonical upper/lower case
+  * `attr.cc`:
+    * `VDISCARD`: start/stop discarding pending output
+    * `VDSUSP`: delayed suspend
+    * `VEOF`: end of file
+    * `VEOL`: additional end-of-line
+    * `VEOL2`: another additional end-of-line
+    * `VERASE`: erase character
+    * `VINTR`: send a SIGINT signal
+    * `VKILL`: erase input
+    * `VLNEXT`: literal next
+    * `VMIN`: min characters for noncanonical read
+    * `VQUIT`: send SIGQUIT signal
+    * `VREPRINT`: reprint unread characters
+    * `VSTART`: resume output
+    * `VSTATUS`: foreground process character
+    * `VSTOP`: pause output
+    * `VSUSP`: send SIGTSTP signal
+    * `VTIME`: timeout in 0.1s for noncanonical read
+    * `VWERASE`: word erase
+
 
 * `.setattr(fd, attr)`: Sets attributes of the terminal bound to the
   file descriptor:
@@ -90,7 +110,22 @@ setTimeout(function() {
 }, 6000);
 ```
 
+```
+var termios = require('termios'), data = '';
+var old_config = termios.getattr(process.stdin.fd);
+console.log("Disabling VINTR. Ctrl-C won't quit now");
+termios.setattr(process.stdin.fd, { cc: { VINTR: void 0 } })
+setTimeout(function() {
+	console.log("\nEnabling VINTR. Press Ctrl-C to quit.");
+	termios.setattr(process.stdin.fd, old_config)
+}, 5000);
+setTimeout(function() {
+  /* Make node wait to quit */
+}, 60000);
+```
+
 Changelog
 ---------
 
+* v0.2 - added support for control characters
 * v0.1 - initial release
