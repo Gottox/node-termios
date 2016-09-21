@@ -5,6 +5,66 @@
 
 #define EXPORT_SYMBOL(o, s) o->Set(Nan::New<v8::String>(#s).ToLocalChecked(), Nan::New<v8::Number>(s));
 
+static struct bauds {
+	int baud, mask;
+} bauds[] =
+{
+{0, B0},
+{50, B50},
+{75, B75},
+{110, B110},
+{134, B134},
+{150, B150},
+{200, B200},
+{300, B300},
+{600, B600},
+{1200, B1200},
+{1800, B1800},
+{2400, B2400},
+{4800, B4800},
+{9600, B9600},
+{19200, B19200},
+{38400, B38400},
+{57600, B57600},
+{115200, B115200},
+{230400, B230400},
+{460800, B460800},
+{500000, B500000},
+{576000, B576000},
+{921600, B921600},
+{1000000, B1000000},
+{1152000, B1152000},
+{1500000, B1500000},
+{2000000, B2000000},
+{2500000, B2500000},
+{3000000, B3000000},
+{3500000, B3500000},
+{4000000, B4000000},
+{-1, 0},
+};
+
+static int mask_to_baud(int mask)
+{
+	int i;
+	for(i=0;bauds[i].baud >= 0;++i)
+	{
+		if(mask == bauds[i].mask)
+			return bauds[i].baud;
+	}
+	return -1;
+}
+
+static int baud_to_mask(int baud)
+{
+	int i;
+	for(i=0;bauds[i].baud >= 0;++i)
+	{
+		if(baud == bauds[i].baud)
+			return bauds[i].mask;
+	}
+	return 0;
+}
+
 NAN_METHOD(Setattr) {
 	struct termios t;
 	Nan::HandleScope scope;
@@ -13,6 +73,7 @@ NAN_METHOD(Setattr) {
 	v8::Local<v8::String> iflag = Nan::New<v8::String>("iflag").ToLocalChecked();
 	v8::Local<v8::String> oflag = Nan::New<v8::String>("oflag").ToLocalChecked();
 	v8::Local<v8::String> cflag = Nan::New<v8::String>("cflag").ToLocalChecked();
+	v8::Local<v8::String> cbaud = Nan::New<v8::String>("cbaud").ToLocalChecked();
 	v8::Local<v8::String> lflag = Nan::New<v8::String>("lflag").ToLocalChecked();
 
 	if(!info[0]->IsNumber())
@@ -22,7 +83,18 @@ NAN_METHOD(Setattr) {
 	if(obj->Has(oflag))
 		t.c_oflag = obj->Get(oflag)->Uint32Value();
 	if(obj->Has(cflag))
+	{
 		t.c_cflag = obj->Get(cflag)->Uint32Value();
+	}
+	if(obj->Has(cbaud))
+	{
+		int mask = baud_to_mask(obj->Get(cbaud)->Uint32Value());
+		if(mask>=0)
+		{
+			t.c_cflag &= ~CBAUD;
+			t.c_cflag |= mask;
+		}
+	}
 	if(obj->Has(lflag))
 		t.c_lflag = obj->Get(lflag)->Uint32Value();
 	if(tcsetattr(info[0]->Uint32Value(), TCSADRAIN, &t) < 0)
@@ -38,7 +110,11 @@ NAN_METHOD(Getattr) {
 	obj->Set(Nan::New<v8::String>("iflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_iflag));
 	obj->Set(Nan::New<v8::String>("oflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_oflag));
 	obj->Set(Nan::New<v8::String>("cflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_cflag));
+	int baud = mask_to_baud(t.c_cflag & CBAUD);
+	if(baud>=0)
+		obj->Set(Nan::New<v8::String>("cbaud").ToLocalChecked(), Nan::New<v8::Number>(baud));
 	obj->Set(Nan::New<v8::String>("lflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_lflag));
+
 	info.GetReturnValue().Set(obj);
 }
 
