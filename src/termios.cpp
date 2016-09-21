@@ -43,22 +43,18 @@ static struct bauds {
 {-1, 0},
 };
 
-static int mask_to_baud(int mask)
-{
+static int mask_to_baud(int mask) {
 	int i;
-	for(i=0;bauds[i].baud >= 0;++i)
-	{
+	for(i=0;bauds[i].baud >= 0;++i) {
 		if(mask == bauds[i].mask)
 			return bauds[i].baud;
 	}
 	return -1;
 }
 
-static int baud_to_mask(int baud)
-{
+static int baud_to_mask(int baud) {
 	int i;
-	for(i=0;bauds[i].baud >= 0;++i)
-	{
+	for(i=0;bauds[i].baud >= 0;++i) {
 		if(baud == bauds[i].baud)
 			return bauds[i].mask;
 	}
@@ -83,17 +79,14 @@ NAN_METHOD(Setattr) {
 	if(obj->Has(oflag))
 		t.c_oflag = obj->Get(oflag)->Uint32Value();
 	if(obj->Has(cflag))
-	{
 		t.c_cflag = obj->Get(cflag)->Uint32Value();
-	}
-	if(obj->Has(cbaud))
-	{
+	if(obj->Has(cbaud)) {
 		int mask = baud_to_mask(obj->Get(cbaud)->Uint32Value());
-		if(mask>=0)
-		{
+		if(mask>=0) {
 			t.c_cflag &= ~CBAUD;
 			t.c_cflag |= mask;
-		}
+		} else
+			return Nan::ThrowError("invalid baud value");
 	}
 	if(obj->Has(lflag))
 		t.c_lflag = obj->Get(lflag)->Uint32Value();
