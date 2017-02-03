@@ -182,7 +182,9 @@ void Init(v8::Handle<v8::Object> exports) {
 	EXPORT_SYMBOL(modes, ISIG);    /* enable signals INTR, QUIT, [D]SUSP */
 	EXPORT_SYMBOL(modes, ICANON);  /* canonicalize input lines */
 	EXPORT_SYMBOL(modes, IEXTEN);  /* enable DISCARD and LNEXT */
+#ifdef EXTPROC
 	EXPORT_SYMBOL(modes, EXTPROC); /* external processing */
+#endif
 	EXPORT_SYMBOL(modes, TOSTOP);  /* stop background jobs from output */
 	EXPORT_SYMBOL(modes, FLUSHO);  /* output being flushed (state) */
 	EXPORT_SYMBOL(modes, PENDIN);  /* XXX retype pending input (state) */
