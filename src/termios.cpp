@@ -70,7 +70,6 @@ static int baud_to_mask(int baud) {
 NAN_METHOD(Setattr) {
 	struct termios t;
 	Nan::HandleScope scope;
-	bzero(&t, sizeof(struct termios));
 	v8::Local<v8::Object> obj = info[2]->ToObject();
 	v8::Local<v8::String> iflag = Nan::New<v8::String>("iflag").ToLocalChecked();
 	v8::Local<v8::String> oflag = Nan::New<v8::String>("oflag").ToLocalChecked();
@@ -80,6 +79,8 @@ NAN_METHOD(Setattr) {
 
 	if(!info[0]->IsNumber())
 		return Nan::ThrowError("fd must be a number");
+	if(tcgetattr(info[0]->Uint32Value(), &t) < 0)
+		return Nan::ThrowError(strerror(errno));
 	if(obj->Has(iflag))
 		t.c_iflag = obj->Get(iflag)->Uint32Value();
 	if(obj->Has(oflag))
