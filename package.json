@@ -10,12 +10,12 @@
   "license": "MIT",
   "dependencies": {
     "extend": "^3.0.0",
-    "nan": "^2.12.0"
+    "nan": "^2.13.2"
   },
   "gypfile": true,
   "devDependencies": {
-    "child_pty": "^3.0.9",
-    "jshint": "^2.9.4",
+    "child_pty": "^3.0.10",
+    "jshint": "^2.10.2",
     "mocha": "^5.2.0"
   },
   "repository": {
