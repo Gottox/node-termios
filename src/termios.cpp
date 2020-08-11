@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#define EXPORT_SYMBOL(o, s) o->Set(Nan::New<v8::String>(#s).ToLocalChecked(), Nan::New<v8::Number>(s));
+#define EXPORT_SYMBOL(o, s) Nan::Set(o, Nan::New<v8::String>(#s).ToLocalChecked(), Nan::New<v8::Number>(s));
 
 static const struct bauds {
 	int baud, mask;
@@ -69,7 +69,7 @@ static int baud_to_mask(int baud) {
 NAN_METHOD(Setattr) {
 	struct termios t;
 	Nan::HandleScope scope;
-	v8::Local<v8::Object> obj = info[2]->ToObject();
+	v8::Local<v8::Object> obj = Nan::To<v8::Object>(info[2]).ToLocalChecked();
 	v8::Local<v8::String> iflag = Nan::New<v8::String>("iflag").ToLocalChecked();
 	v8::Local<v8::String> oflag = Nan::New<v8::String>("oflag").ToLocalChecked();
 	v8::Local<v8::String> cflag = Nan::New<v8::String>("cflag").ToLocalChecked();
@@ -79,20 +79,20 @@ NAN_METHOD(Setattr) {
 	if (!info[0]->IsNumber()) {
 		return Nan::ThrowError("fd must be a number");
 	}
-	if (tcgetattr(info[0]->Uint32Value(), &t) < 0) {
+	if (tcgetattr(Nan::To<v8::Uint32>(info[0]).ToLocalChecked()->Value(), &t) < 0) {
 		return Nan::ThrowError(strerror(errno));
 	}
-	if (obj->Has(iflag)) {
-		t.c_iflag = obj->Get(iflag)->Uint32Value();
+	if (!Nan::Has(obj, iflag).IsNothing()) {
+		t.c_iflag = Nan::Get(obj, iflag).ToLocalChecked()->ToUint32(Nan::GetCurrentContext()).ToLocalChecked()->Value();
 	}
-	if (obj->Has(oflag)) {
-		t.c_oflag = obj->Get(oflag)->Uint32Value();
+	if (!Nan::Has(obj, oflag).IsNothing()) {
+		t.c_oflag = Nan::Get(obj, oflag).ToLocalChecked()->ToUint32(Nan::GetCurrentContext()).ToLocalChecked()->Value();
 	}
-	if (obj->Has(cflag)) {
-		t.c_cflag = obj->Get(cflag)->Uint32Value();
+	if (!Nan::Has(obj, cflag).IsNothing()) {
+		t.c_cflag = Nan::Get(obj, cflag).ToLocalChecked()->ToUint32(Nan::GetCurrentContext()).ToLocalChecked()->Value();
 	}
-	if (obj->Has(cbaud)) {
-		int mask = baud_to_mask(obj->Get(cbaud)->Uint32Value());
+	if (!Nan::Has(obj, cbaud).IsNothing()) {
+		int mask = baud_to_mask(Nan::Get(obj, cbaud).ToLocalChecked()->ToUint32(Nan::GetCurrentContext()).ToLocalChecked()->Value());
 		if (mask>=0) {
 			t.c_cflag &= ~CBAUD;
 			t.c_cflag |= mask;
@@ -100,10 +100,10 @@ NAN_METHOD(Setattr) {
 			return Nan::ThrowError("invalid baud value");
 		}
 	}
-	if (obj->Has(lflag)) {
-		t.c_lflag = obj->Get(lflag)->Uint32Value();
+	if (!Nan::Has(obj, lflag).IsNothing()) {
+		t.c_lflag = Nan::Get(obj, lflag).ToLocalChecked()->ToUint32(Nan::GetCurrentContext()).ToLocalChecked()->Value();
 	}
-	if (tcsetattr(info[0]->Uint32Value(), TCSADRAIN, &t) < 0) {
+	if (tcsetattr(info[0]->ToInt32(Nan::GetCurrentContext()).ToLocalChecked()->Value(), TCSADRAIN, &t) < 0) {
 		return Nan::ThrowError(strerror(errno));
 	}
 }
@@ -111,24 +111,25 @@ NAN_METHOD(Setattr) {
 NAN_METHOD(Getattr) {
 	struct termios t;
 	Nan::HandleScope scope;
-	if (tcgetattr(info[0]->Uint32Value(), &t) < 0) {
+	if (tcgetattr(info[0]->ToInt32(Nan::GetCurrentContext()).ToLocalChecked()->Value(), &t) < 0) {
 		return Nan::ThrowError(strerror(errno));
 	}
 	v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-	obj->Set(Nan::New<v8::String>("iflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_iflag));
-	obj->Set(Nan::New<v8::String>("oflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_oflag));
-	obj->Set(Nan::New<v8::String>("cflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_cflag));
+	
+	Nan::Set(obj, Nan::New<v8::String>("iflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_iflag));
+	Nan::Set(obj, Nan::New<v8::String>("oflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_oflag));
+	Nan::Set(obj, Nan::New<v8::String>("cflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_cflag));
 	int baud = mask_to_baud(t.c_cflag & CBAUD);
 	if (baud>=0) {
-		obj->Set(Nan::New<v8::String>("cbaud").ToLocalChecked(), Nan::New<v8::Number>(baud));
+		Nan::Set(obj, Nan::New<v8::String>("cbaud").ToLocalChecked(), Nan::New<v8::Number>(baud));
 	}
-	obj->Set(Nan::New<v8::String>("lflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_lflag));
+	Nan::Set(obj, Nan::New<v8::String>("lflag").ToLocalChecked(), Nan::New<v8::Number>(t.c_lflag));
 
 	info.GetReturnValue().Set(obj);
 }
 
-void Init(v8::Handle<v8::Object> exports) {
-	v8::Handle<v8::Object> modes;
+void Init(v8::Local<v8::Object> exports) {
+	v8::Local<v8::Object> modes;
 
 	Nan::SetMethod(exports, "setattr", Setattr);
 	Nan::SetMethod(exports, "getattr", Getattr);
@@ -153,7 +154,7 @@ void Init(v8::Handle<v8::Object> exports) {
 	EXPORT_SYMBOL(modes, IXANY);   /* any char will restart after stop */
 	EXPORT_SYMBOL(modes, IMAXBEL); /* ring bell on input queue full */
 	//EXPORT_SYMBOL(modes, IUCLC);   /* translate upper case to lower case */
-	exports->Set(Nan::New<v8::String>("iflag").ToLocalChecked(), modes);
+	Nan::Set(exports, Nan::New<v8::String>("iflag").ToLocalChecked(), modes);
 
 	/* Output Modes */
 	modes = Nan::New<v8::Object>();
@@ -163,7 +164,7 @@ void Init(v8::Handle<v8::Object> exports) {
 	//EXPORT_SYMBOL(modes, OLCUC);   /* translate lower case to upper case */
 	EXPORT_SYMBOL(modes, ONOCR);   /* No CR output at column 0 */
 	EXPORT_SYMBOL(modes, ONLRET);  /* NL performs the CR function */
-	exports->Set(Nan::New<v8::String>("oflag").ToLocalChecked(), modes);
+	Nan::Set(exports, Nan::New<v8::String>("oflag").ToLocalChecked(), modes);
 
 	/* Control Modes */
 	modes = Nan::New<v8::Object>();
@@ -178,7 +179,7 @@ void Init(v8::Handle<v8::Object> exports) {
 	EXPORT_SYMBOL(modes, PARODD);  /* odd parity, else even */
 	EXPORT_SYMBOL(modes, HUPCL);   /* hang up on last close */
 	EXPORT_SYMBOL(modes, CLOCAL);  /* ignore modem status lines */
-	exports->Set(Nan::New<v8::String>("cflag").ToLocalChecked(), modes);
+	Nan::Set(exports, Nan::New<v8::String>("cflag").ToLocalChecked(), modes);
 
 	/* Local Modes */
 	modes = Nan::New<v8::Object>();
@@ -200,7 +201,7 @@ void Init(v8::Handle<v8::Object> exports) {
 	EXPORT_SYMBOL(modes, PENDIN);  /* XXX retype pending input (state) */
 	EXPORT_SYMBOL(modes, NOFLSH);  /* don't flush after interrupt */
 	//EXPORT_SYMBOL(modes, XCASE);   /* canonical upper/lower case */
-	exports->Set(Nan::New<v8::String>("lflag").ToLocalChecked(), modes);
+	Nan::Set(exports, Nan::New<v8::String>("lflag").ToLocalChecked(), modes);
 }
 
 NODE_MODULE(pty, Init)
